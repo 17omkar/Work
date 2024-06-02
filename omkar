@@ -1,0 +1,142 @@
+import numpy as np
+from pymongo import MongoClient
+import random
+import string
+from faker import Faker
+fake=Faker()
+def read_file(file_path):
+    with open(file_path) as file:
+        lines = file.read().splitlines()
+    return lines
+
+def write_file(file_path, lines):
+    with open(file_path, 'w') as file:
+        file.write('\n'.join(lines))
+
+def determine_type(sample):
+    if sample[0] == '5':
+        return "Non Monetary"
+    elif sample[0] == '3':
+        return "Monetary"
+    else:
+        return None
+
+def mongodb_connection(url):
+    client = MongoClient(url)
+    db = client.get_database("local")
+    return db
+
+def generate_random_accountnumber():
+    return ''.join(random.choices(string.digits, k=7))
+
+
+
+
+loanaccount_type_options=[
+    # Fixed rate mortgage= 0001
+    # Adjustable-rate mortgage (ARM)= 0002
+    # Jumbo loans  =  0003
+    # Low down payment options= 0004
+    # Government mortgage loan options= 0005
+    # Loans for newly built homes= 0006
+    # Cash-out refinance= 0007
+    '0001','0002','0003','0004','0005','0006','0007'
+]
+def generate_random_loanaccounttype():
+    return ''.join(random.choice(loanaccount_type_options))
+
+def generate_random_shortname():
+    Firstname=fake.first_name()
+    Lastname=fake.last_name()
+    Firstname=Firstname.upper()
+    Lastname=Lastname.upper()
+    shortname=f"{Firstname} {Lastname}"
+    if len(shortname)>15:
+        shortname=shortname[:15]
+    else:
+        shortname=shortname.ljust(15)
+    return shortname
+
+def generate_random_postdate():
+    month=fake.month()
+    day=fake.day_of_month()
+    year="24"
+    century="2"
+    postdate=f"{month}{day}{year}{century}"
+    return postdate
+
+def generate_random_effectivedate():
+    month=fake.month()
+    day=fake.day_of_month()
+    year="24"
+    century="2"
+    effectivedate=f"{month}{day}{year}{century}"
+    return effectivedate
+
+def generate_random_Trancode():
+    return ''.join(random.choices(string.digits,k=2))
+
+def generate_random_Fieldnumber():
+    return ''.join(random.choices(string.digits,k=3))
+
+def generate_random_OpID():
+    return ''.join(random.choices(string.digits,k=3))
+
+def generate_random_Opname():
+    name = fake.first_name().upper()
+    if len(name) > 3:
+        name = name[:3]
+    else:
+        name = name.ljust(3)
+    return name
+def generate_random_Batchnnumber():
+    return ''.join(random.choices(string.digits,k=3))
+
+def insert_data(uri, collection_name, data, num_lines):
+    db = mongodb_connection(uri)
+    collection = db.get_collection(collection_name)
+    new_lines = []
+
+    for _ in range(num_lines):
+        line = random.choice(data)
+        line = line.strip()
+        data_type = determine_type(line)
+        document = {
+            "Type": data_type
+        }
+
+        if data_type == "Non Monetary":
+            new_line = line[:7] + generate_random_accountnumber() +generate_random_loanaccounttype() + line[18:25]+ generate_random_shortname()+ generate_random_postdate()+ generate_random_effectivedate() + generate_random_Trancode() + generate_random_Fieldnumber() + line[59:105] + generate_random_Opname()+' '*13 +generate_random_Batchnnumber()
+            document.update({
+                "Bank": new_line[1:4],
+                "Branch": new_line[4:7],
+                "AccountNumber": new_line[7:14],
+                "LoanAccountType": new_line[14:18],
+                "AccountType": new_line[18:19],
+                "ClassCode": new_line[19:21],
+                "Collcode": new_line[21:25],
+                "ShortName": new_line[25:40],
+                "PostDate": new_line[40:47],
+                "EffectiveDate": new_line[47:54],
+                "TranCode": new_line[54:56],
+                "FieldNumber": new_line[56:59],
+                "TranDescription": new_line[59:94],
+                "OpID": new_line[97:105],
+                "OpName": new_line[105:121],
+                "BatchNumber": new_line[121:124]
+            })
+            collection.insert_one(document)
+            new_lines.append(new_line)
+    
+    return new_lines
+
+if __name__ == "__main__":
+    file_path = "Sample_data.txt"
+    uri = "mongodb://localhost:27017/"
+    collection_name = "mydata"
+    lines = read_file(file_path)
+    num_lines_to_add = 100                   ######
+    new_lines = insert_data(uri, collection_name, lines, num_lines_to_add)
+    all_lines = lines + new_lines
+    write_file(file_path, all_lines)
+
