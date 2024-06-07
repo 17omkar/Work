@@ -1,1 +1,49 @@
+import random
+
+def generate_random_transinterest():
+    before_decimal_part = random.randint(0, 620830)
+    max_after_decimal_length = 8 - len(str(before_decimal_part)) - 1  # Subtract 1 for the decimal point
+    after_decimal = random.randint(0, 10**max_after_decimal_length - 1)
+    interest_amount = f"{before_decimal_part}.{after_decimal:0{max_after_decimal_length}d}"
+    return float(interest_amount)
+
+def generate_random_transprincipal():
+    before_decimal_part = random.randint(0, 4279170)
+    max_after_decimal_length = 8 - len(str(before_decimal_part)) - 1  # Subtract 1 for the decimal point
+    after_decimal = random.randint(0, 10**max_after_decimal_length - 1)
+    principal_amount = f"{before_decimal_part}.{after_decimal:0{max_after_decimal_length}d}"
+    return float(principal_amount)
+
+def generate_random_transmisc():
+    before_decimal_part = random.randint(0, 100000)
+    max_after_decimal_length = 8 - len(str(before_decimal_part)) - 1  # Subtract 1 for the decimal point
+    after_decimal = random.randint(0, 10**max_after_decimal_length - 1)
+    misc_amount = f"{before_decimal_part}.{after_decimal:0{max_after_decimal_length}d}"
+    return float(misc_amount)
+
+def generate_sign():
+    return random.choice([1, -1])
+
+def generate_random_transamounts_with_signs():
+    sign = generate_sign()  # Randomly choose the sign for principal and interest
+    misc_sign = generate_sign()  # Randomly choose the sign for misc
+
+    principal = sign * generate_random_transprincipal()
+    interest = sign * generate_random_transinterest()  # Ensure interest has the same sign as principal
+    misc = misc_sign * generate_random_transmisc()
+    
+    return principal, interest, misc, sign, misc_sign
+
+def generate_random_transtotal():
+    principal, interest, misc, sign, misc_sign = generate_random_transamounts_with_signs()
+    total = principal + interest + misc
+    return principal, interest, misc, total, sign, misc_sign
+
+# Example usage:
+principal, interest, misc, total, sign, misc_sign = generate_random_transtotal()
+principal_sign = '+' if sign == 1 else '-'
+interest_sign = '+' if sign == 1 else '-'
+misc_sign_str = '+' if misc_sign == 1 else '-'
+
+print(f"Principal: {principal_sign}{principal:.7f}, Interest: {interest_sign}{interest:.7f}, Misc: {misc_sign_str}{misc:.7f}, Total: {total:+.7f}")
 
