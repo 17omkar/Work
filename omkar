@@ -70,3 +70,91 @@ interestamount = generate_random_transinterest()
 
 print("interestamountstr =", interestamountstr)
 print("interestamount =", interestamount)
+
+
+
+
+
+
+
+
+import random
+
+def generate_random_Transinterest():
+    beforedecimal_part = random.randint(0, 620830)
+    after_decimal = random.randint(0, 99)
+    interest_amount = f"{beforedecimal_part}.{after_decimal:02d}"
+    return float(interest_amount)
+
+def generate_random_transinterest_str(number):
+    number_str = str(number).replace('.', '')
+    return number_str.zfill(9)
+
+def generate_random_Transinterestsign():
+    signs = ['+', '-']
+    interest_sign = random.choice(signs)
+    return interest_sign
+
+def generate_random_Transprincipal():
+    beforedecimal_part = random.randint(0, 4279170)
+    after_decimal = random.randint(0, 99)
+    principal_amount = f"{beforedecimal_part}.{after_decimal:02d}"
+    return float(principal_amount)
+
+def generate_random_transprincipal_str(number):
+    number_str = str(number).replace('.', '')
+    return number_str.zfill(11)
+
+def generate_random_Transprincipalsign():
+    principal_sign = generate_random_Transinterestsign()
+    return principal_sign
+
+def generate_random_Transmisc():
+    beforedecimal_part = random.randint(0, 100000)
+    after_decimal = random.randint(0, 99)
+    misc_amount = f"{beforedecimal_part}.{after_decimal:02d}"
+    return float(misc_amount)
+
+def generate_random_transmisc_str(number):
+    number_str = str(number).replace('.', '')
+    return number_str.zfill(11)
+
+def generate_random_transamounts():
+    principal_sign = generate_random_Transprincipalsign()
+    principal_sign_multiplier = 1 if principal_sign == '+' else -1
+    principal = principal_sign_multiplier * generate_random_Transprincipal()
+    
+    interest_sign = generate_random_Transinterestsign()
+    interest_sign_multiplier = 1 if interest_sign == '+' else -1
+    interest = interest_sign_multiplier * generate_random_Transinterest()
+    
+    misc_sign = generate_random_Transinterestsign()
+    misc_sign_multiplier = 1 if misc_sign == '+' else -1
+    misc = misc_sign_multiplier * generate_random_Transmisc()
+    
+    return principal, interest, misc
+
+def generate_random_Transtotal():
+    principal, interest, misc = generate_random_transamounts()
+    total = principal + interest + misc
+    absolute_total = abs(total)  # Ignore the sign for the total amount
+    return round(absolute_total, 2), total  # Return both the absolute total and the signed total
+
+def generate_random_transtotal_str(number):
+    number_str = str(number).replace('.', '')
+    return number_str.zfill(11)
+
+def generate_random_transtotalsign(total):
+    if total < 0:
+        return '-'
+    else:
+        return '+'
+
+# Example usage:
+absolute_total, signed_total = generate_random_Transtotal()
+total_str = generate_random_transtotal_str(absolute_total)
+total_sign = generate_random_transtotalsign(signed_total)
+
+print("Absolute Total amount (ignoring sign):", absolute_total)
+print("Total amount as string without decimal point:", total_str)
+print("Total amount sign:", total_sign)
