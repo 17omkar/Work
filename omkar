@@ -47,3 +47,26 @@ misc_sign_str = '+' if misc_sign == 1 else '-'
 
 print(f"Principal: {principal_sign}{principal:.7f}, Interest: {interest_sign}{interest:.7f}, Misc: {misc_sign_str}{misc:.7f}, Total: {total:+.7f}")
 
+import random
+
+def generate_common_random_parts():
+    before_decimal_part = random.randint(0, 620830)
+    max_after_decimal_length = 8  # Ensure 1 decimal place
+    after_decimal = random.randint(0, 9)  # Generate single digit for after decimal
+    return before_decimal_part, after_decimal
+
+def generate_random_transinterest_str():
+    before_decimal_part, after_decimal = generate_common_random_parts()
+    interest_amount_str = f"{before_decimal_part}.{after_decimal}"
+    return interest_amount_str
+
+def generate_random_transinterest():
+    before_decimal_part, after_decimal = generate_common_random_parts()
+    interest_amount = before_decimal_part * 10 + after_decimal
+    return interest_amount
+
+interestamountstr = generate_random_transinterest_str()
+interestamount = generate_random_transinterest()
+
+print("interestamountstr =", interestamountstr)
+print("interestamount =", interestamount)
