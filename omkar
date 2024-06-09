@@ -1,147 +1,138 @@
+import numpy as np
+from pymongo import MongoClient
 import random
+import string
+from faker import Faker
 
-def generate_random_transinterest():
-    before_decimal_part = random.randint(0, 620830)
-    max_after_decimal_length = 8 - len(str(before_decimal_part)) - 1  # Subtract 1 for the decimal point
-    after_decimal = random.randint(0, 10**max_after_decimal_length - 1)
-    interest_amount = f"{before_decimal_part}.{after_decimal:0{max_after_decimal_length}d}"
-    return float(interest_amount)
+fake = Faker()
 
-def generate_random_transprincipal():
-    before_decimal_part = random.randint(0, 4279170)
-    max_after_decimal_length = 8 - len(str(before_decimal_part)) - 1  # Subtract 1 for the decimal point
-    after_decimal = random.randint(0, 10**max_after_decimal_length - 1)
-    principal_amount = f"{before_decimal_part}.{after_decimal:0{max_after_decimal_length}d}"
-    return float(principal_amount)
+def read_file(file_path):
+    with open(file_path) as file:
+        lines = file.read().splitlines()
+    return lines
 
-def generate_random_transmisc():
-    before_decimal_part = random.randint(0, 100000)
-    max_after_decimal_length = 8 - len(str(before_decimal_part)) - 1  # Subtract 1 for the decimal point
-    after_decimal = random.randint(0, 10**max_after_decimal_length - 1)
-    misc_amount = f"{before_decimal_part}.{after_decimal:0{max_after_decimal_length}d}"
-    return float(misc_amount)
+def write_file(file_path, lines):
+    with open(file_path, 'w') as file:
+        file.write('\n'.join(lines))
 
-def generate_sign():
-    return random.choice([1, -1])
+def determine_type(sample):
+    if sample[0] == '5':
+        return "Non Monetary"
+    elif sample[0] == '3':
+        return "Monetary"
+    else:
+        return None
 
-def generate_random_transamounts_with_signs():
-    sign = generate_sign()  # Randomly choose the sign for principal and interest
-    misc_sign = generate_sign()  # Randomly choose the sign for misc
+def mongodb_connection(url):
+    client = MongoClient(url)
+    db = client.get_database("mongo_lease001")
+    return db
 
-    principal = sign * generate_random_transprincipal()
-    interest = sign * generate_random_transinterest()  # Ensure interest has the same sign as principal
-    misc = misc_sign * generate_random_transmisc()
-    
-    return principal, interest, misc, sign, misc_sign
+def generate_random_branchcode():
+    branch = random.randint(501, 600)
+    return branch
 
-def generate_random_transtotal():
-    principal, interest, misc, sign, misc_sign = generate_random_transamounts_with_signs()
-    total = principal + interest + misc
-    return principal, interest, misc, total, sign, misc_sign
+def generate_random_accountnumber():
+    accnum = random.randint(1111111, 9999999)
+    return accnum
 
-# Example usage:
-principal, interest, misc, total, sign, misc_sign = generate_random_transtotal()
-principal_sign = '+' if sign == 1 else '-'
-interest_sign = '+' if sign == 1 else '-'
-misc_sign_str = '+' if misc_sign == 1 else '-'
+loanaccount_type_options = [
+    '0001', '0002', '0003', '0004', '0005', '0006', '0007'
+]
 
-print(f"Principal: {principal_sign}{principal:.7f}, Interest: {interest_sign}{interest:.7f}, Misc: {misc_sign_str}{misc:.7f}, Total: {total:+.7f}")
+def generate_random_loanaccounttype():
+    return ''.join(random.choice(loanaccount_type_options))
 
-import random
+def generate_random_shortname():
+    Firstname = fake.first_name()
+    Lastname = fake.last_name()
+    Firstname = Firstname.upper()
+    Lastname = Lastname.upper()
+    shortname = f"{Firstname} {Lastname}"
+    if len(shortname) > 15:
+        shortname = shortname[:15]
+    else:
+        shortname = shortname.ljust(15)
+    return shortname
 
-def generate_common_random_parts():
-    before_decimal_part = random.randint(0, 620830)
-    max_after_decimal_length = 8  # Ensure 1 decimal place
-    after_decimal = random.randint(0, 9)  # Generate single digit for after decimal
-    return before_decimal_part, after_decimal
+def generate_random_postdate(month, day):
+    year = "24"
+    century = "2"
+    postdate = f"{month:02d}{day:02d}{year}{century}"
+    return postdate
 
-def generate_random_transinterest_str():
-    before_decimal_part, after_decimal = generate_common_random_parts()
-    interest_amount_str = f"{before_decimal_part}.{after_decimal}"
-    return interest_amount_str
+def generate_random_effectivedate(month, day):
+    year = "24"
+    century = "2"
+    effectivedate = f"{month:02d}{day:02d}{year}{century}"
+    return effectivedate
 
-def generate_random_transinterest():
-    before_decimal_part, after_decimal = generate_common_random_parts()
-    interest_amount = before_decimal_part * 10 + after_decimal
-    return interest_amount
-
-interestamountstr = generate_random_transinterest_str()
-interestamount = generate_random_transinterest()
-
-print("interestamountstr =", interestamountstr)
-print("interestamount =", interestamount)
-
-
+def generate_random_legit_datechecker():
+    month = int(fake.month())
+    day1 = int(fake.day_of_month())
+    day2 = day1 + random.randint(6, 7)
+    return generate_random_postdate(month, day1) + generate_random_effectivedate(month, day2)
 
 
+def generate_random_Trancode():
+    trancode=random.randint(60,90)
+    return trancode
+
+Action_code_list = ['A', 'P', 'I', 'R']
+
+def generate_random_Actioncode():
+    return ''.join(random.choice(Action_code_list))
+
+def generate_random_interest():
+    beforedecimal = random.randint(0, 620830)
+    afterdecimal = random.randint(0, 99)
+    interest_amount = f"{beforedecimal}.{afterdecimal:02d}"
+    a = str(interest_amount)
+    i = a.replace('.', '')
+    return float(interest_amount), i.zfill(9)
 
 
+def generate_random_principal():
+    beforedecimal = random.randint(0, 4279190)
+    afterdecimal = random.randint(0, 99)
+    principal_amount = f"{beforedecimal}.{afterdecimal:02d}"
+    a = str(principal_amount)
+    p = a.replace('.', '')
+    return float(principal_amount), p.zfill(11)
 
 
-import random
+def generate_random_misc():
+    beforedecimal = random.randint(0, 100000)
+    afterdecimal = random.randint(0, 99)
+    misc_amount = f"{beforedecimal}.{afterdecimal:02d}"
+    a = str(misc_amount)
+    m = a.replace('.', '')
+    return float(misc_amount), m.zfill(11)
 
-def generate_random_Transinterest():
-    beforedecimal_part = random.randint(0, 620830)
-    after_decimal = random.randint(0, 99)
-    interest_amount = f"{beforedecimal_part}.{after_decimal:02d}"
-    return float(interest_amount)
 
-def generate_random_transinterest_str(number):
-    number_str = str(number).replace('.', '')
-    return number_str.zfill(9)
+Signs = ['+', '-']
 
-def generate_random_Transinterestsign():
-    signs = ['+', '-']
-    interest_sign = random.choice(signs)
-    return interest_sign
+def generate_random_transinterestsign():
+    return random.choice(Signs)
 
-def generate_random_Transprincipal():
-    beforedecimal_part = random.randint(0, 4279170)
-    after_decimal = random.randint(0, 99)
-    principal_amount = f"{beforedecimal_part}.{after_decimal:02d}"
-    return float(principal_amount)
+def generate_random_transmiscsign():
+    return random.choice(Signs)
 
-def generate_random_transprincipal_str(number):
-    number_str = str(number).replace('.', '')
-    return number_str.zfill(11)
+def generate_random_trans_Signs():
+    iis = ps = generate_random_transinterestsign()
+    ms = generate_random_transmiscsign()
+    return iis, ps, ms
 
-def generate_random_Transprincipalsign():
-    principal_sign = generate_random_Transinterestsign()
-    return principal_sign
 
-def generate_random_Transmisc():
-    beforedecimal_part = random.randint(0, 100000)
-    after_decimal = random.randint(0, 99)
-    misc_amount = f"{beforedecimal_part}.{after_decimal:02d}"
-    return float(misc_amount)
-
-def generate_random_transmisc_str(number):
-    number_str = str(number).replace('.', '')
-    return number_str.zfill(11)
-
-def generate_random_transamounts():
-    principal_sign = generate_random_Transprincipalsign()
-    principal_sign_multiplier = 1 if principal_sign == '+' else -1
-    principal = principal_sign_multiplier * generate_random_Transprincipal()
-    
-    interest_sign = generate_random_Transinterestsign()
-    interest_sign_multiplier = 1 if interest_sign == '+' else -1
-    interest = interest_sign_multiplier * generate_random_Transinterest()
-    
-    misc_sign = generate_random_Transinterestsign()
-    misc_sign_multiplier = 1 if misc_sign == '+' else -1
-    misc = misc_sign_multiplier * generate_random_Transmisc()
-    
-    return principal, interest, misc
-
-def generate_random_Transtotal():
-    principal, interest, misc = generate_random_transamounts()
-    total = principal + interest + misc
-    absolute_total = abs(total)  # Ignore the sign for the total amount
-    return round(absolute_total, 2), total  # Return both the absolute total and the signed total
+def generate_random_total(ints,prs,mis,iv,pv,mv):
+    a = 1 if ints == '+' else -1
+    b = 1 if prs == '+' else -1
+    c = 1 if mis == '+' else -1
+    total = a * iv + b * pv + c * mv
+    return total
 
 def generate_random_transtotal_str(number):
-    number_str = str(number).replace('.', '')
+    number_str = str(int(abs(number) * 100))
     return number_str.zfill(11)
 
 def generate_random_transtotalsign(total):
@@ -150,11 +141,196 @@ def generate_random_transtotalsign(total):
     else:
         return '+'
 
-# Example usage:
-absolute_total, signed_total = generate_random_Transtotal()
-total_str = generate_random_transtotal_str(absolute_total)
-total_sign = generate_random_transtotalsign(signed_total)
 
-print("Absolute Total amount (ignoring sign):", absolute_total)
-print("Total amount as string without decimal point:", total_str)
-print("Total amount sign:", total_sign)
+
+def generate_opid():
+    first_char = random.choice(string.ascii_uppercase)  # Choose the first character from the letters
+    remaining_chars = ''.join(random.choices(string.ascii_uppercase + string.digits, k=7))  # Choose the remaining 7 characters from letters and digits
+    opid = first_char + remaining_chars
+    return opid
+
+opid = generate_opid()
+
+def generate_random_Opname():
+    Firstname = fake.first_name()
+    Lastname = fake.last_name()
+    Firstname = Firstname.upper()
+    Lastname = Lastname.upper()
+    shortname = f"{Firstname} {Lastname}"
+    if len(shortname) > 15:
+        shortname = shortname[:15]
+    else:
+        shortname = shortname.ljust(15)
+    return shortname
+
+
+def generate_random_Batchnumber():
+    batchnum=random.randint(601,700)
+    return batchnum
+
+
+def insert_data(uri, collection_name, data, num_lines):
+    db = mongodb_connection(uri)
+    collection = db.get_collection(collection_name)
+    new_lines = []
+
+    for _ in range(num_lines):
+        line = random.choice(data)
+        line = line.strip()
+        data_type = determine_type(line)
+        document = {
+            "Type": data_type
+        }
+
+        if data_type == "Monetary":
+            iv, istr = generate_random_interest()
+            pv, pstr = generate_random_principal()
+            mv, mstr = generate_random_misc()
+            ints, prs, mis = generate_random_trans_Signs()
+            total = generate_random_total(ints, prs, mis, iv, pv, mv)
+            total_str = generate_random_transtotal_str(total)
+            total_sign = generate_random_transtotalsign(total)
+            branch_code = str(generate_random_branchcode())
+            account_number = str(generate_random_accountnumber())
+            loan_account_type = generate_random_loanaccounttype()
+            short_name = generate_random_shortname()
+            post_date, effective_date = generate_random_legit_datechecker()[:7], generate_random_legit_datechecker()[7:]
+            tran_code = str(generate_random_Trancode())
+            action_code = generate_random_Actioncode()
+            trans_interest = istr
+            trans_interest_sign=ints
+            trans_principal = pstr
+            trans_principal_sign=prs
+            trans_misc = mstr
+            trans_misc_sign=mis
+            Op_id=opid
+            op_name = generate_random_Opname()
+            batch_number = str(generate_random_Batchnumber())
+            trans_total = total_str
+            trans_total_sign = total_sign
+
+            new_line = (
+                line[:4] +
+                branch_code +
+                account_number +
+                loan_account_type +
+                line[18:25] +
+                short_name +
+                post_date +
+                effective_date +
+                tran_code +
+                action_code +
+                trans_interest +
+                trans_interest_sign +
+                trans_principal +
+                trans_principal_sign +
+                trans_misc +
+                trans_misc_sign+
+                line[91:97]+
+                Op_id +
+                op_name +
+                ' '+
+                batch_number +
+                total_str+
+                total_sign
+            )
+            
+            document.update({
+                "Bank": new_line[1:4],
+                "Branch": new_line[4:7],
+                "AccountNumber": new_line[7:14],
+                "LoanAccountType": new_line[14:18],
+                "AccountType": new_line[18:19],
+                "ClassCode": new_line[19:21],
+                "Collcode": new_line[21:25],
+                "ShortName": new_line[25:40],
+                "PostDate": new_line[40:47],
+                "EffectiveDate": new_line[47:54],
+                "TranCode": new_line[54:56],
+                "ActionCode": new_line[56:57],
+                "TransInterest": new_line[57:66],
+                "TransInterestsign": new_line[66:67],
+                "TransPrincipal": new_line[67:78],
+                "TransPrincipalsign": new_line[78:79],
+                "TransMisc": new_line[79:90],
+                "TransMiscsign": new_line[90:91],
+                "Transdescription":new_line[91:95],
+                "Op_id":new_line[97:105],
+                "OpName": new_line[105:121],
+                "BatchNumber": new_line[121:124],
+                "TransTotal": new_line[124:135],
+                "TotalSign": new_line[135:136]
+            })
+
+            collection.insert_one(document)
+            new_lines.append(new_line)
+
+    return new_lines
+
+if __name__ == "__main__":
+    file_path = "Sample_data.txt"
+    uri = "mongodb://localhost:27017/"
+    collection_name = "mydata"
+    lines = read_file(file_path)
+    num_lines_to_add = 10
+    new_lines = insert_data(uri, collection_name, lines, num_lines_to_add)
+    all_lines = lines + new_lines
+    write_file(file_path, all_lines)
+
+
+
+
+
+
+
+checker:
+def extract_amounts(line):
+    # Extracting the values and their signs from the line
+    trans_interest = float(line[57:66]) / 100
+    trans_interest_sign = line[66]
+
+    trans_principal = float(line[67:78]) / 100
+    trans_principal_sign = line[78]
+
+    trans_misc = float(line[79:90]) / 100
+    trans_misc_sign = line[90]
+
+    total_str = line[124:135]
+    total_sign = line[135]
+
+    # Applying the signs to the extracted amounts
+    if trans_interest_sign == '-':
+        trans_interest = -trans_interest
+    if trans_principal_sign == '-':
+        trans_principal = -trans_principal
+    if trans_misc_sign == '-':
+        trans_misc = -trans_misc
+
+    # Calculate the total
+    total_computed = trans_interest + trans_principal + trans_misc
+
+    # Compare with the given total
+    given_total = float(total_str) / 100
+    if total_sign == '-':
+        given_total = -given_total
+
+    return trans_interest, trans_principal, trans_misc, total_computed, given_total
+
+# Given line
+line = "3601595366868000028355411VALERIE HARRIS 0122242080924274I035515481-00149348882-00002688111+****  Q16D97X6TYLER WATSON    67700182176252-"
+
+# Extract and verify amounts
+trans_interest, trans_principal, trans_misc, total_computed, given_total = extract_amounts(line)
+
+print(f"Interest: {trans_interest}")
+print(f"Principal: {trans_principal}")
+print(f"Misc: {trans_misc}")
+print(f"Computed Total: {total_computed}")
+print(f"Given Total: {given_total}")
+
+# Check if they match
+if round(total_computed, 2) == round(given_total, 2):
+    print("The total matches.")
+else:
+    print("The total does not match.")
+
