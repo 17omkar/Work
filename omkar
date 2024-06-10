@@ -1,4 +1,4 @@
-import numpy as np
+8import numpy as np
 from pymongo import MongoClient
 import random
 import string
@@ -388,3 +388,32 @@ print(f"Processed Shortname: {processed_shortname}")
 postdate, effectivedate = generate_random_legit_datechecker()
 print(f"Post Date: {postdate}, Effective Date: {effectivedate}")
 
+
+
+
+
+
+from calendar import monthrange
+
+def generate_random_legit_datechecker():
+    while True:
+        month = random.randint(1, 12)
+        year = 2024  # Year to consider for leap year
+        day1 = random.randint(1, 28)  # Simplified to avoid issues with month lengths
+        day2 = day1 + random.randint(0, 7)
+        
+        # Handle month change if day2 exceeds the number of days in the month
+        days_in_month = monthrange(year, month)[1]
+        if day2 > days_in_month:
+            month += 1
+            if month > 12:
+                month = 1  # Roll over to January if it exceeds December
+            day2 -= days_in_month
+
+        postdate = generate_random_postdate(month, day1)
+        effectivedate = generate_random_effectivedate(month, day2)
+        return postdate, effectivedate
+
+# Example usage
+postdate, effectivedate = generate_random_legit_datechecker()
+print(f"Post Date: {postdate}, Effective Date: {effectivedate}")
