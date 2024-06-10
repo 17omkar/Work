@@ -334,3 +334,57 @@ if round(total_computed, 2) == round(given_total, 2):
 else:
     print("The total does not match.")
 
+
+
+####
+import random
+from faker import Faker
+
+fake = Faker()
+
+# Ensure shortname is exactly 15 characters
+def process_shortname(shortname):
+    if len(shortname) > 15:
+        shortname = shortname[:15]
+    else:
+        shortname = shortname.ljust(15)
+    return shortname
+
+# Generate a random post date
+def generate_random_postdate(month, day):
+    year = "24"
+    century = "2"
+    postdate = f"{month:02d}{day:02d}{year}{century}"
+    return postdate
+
+# Generate a random effective date
+def generate_random_effectivedate(month, day):
+    year = "24"
+    century = "2"
+    effectivedate = f"{month:02d}{day:02d}{year}{century}"
+    return effectivedate
+
+# Generate random dates with a 7-day difference
+def generate_random_legit_datechecker():
+    month = int(fake.month())
+    day1 = int(fake.day_of_month())
+    day2 = day1 + random.randint(0, 7)
+    
+    # Ensure day2 does not exceed the number of days in the month
+    while day2 > 28:  # Simplified check to avoid complexity with different month lengths
+        day1 = int(fake.day_of_month())
+        day2 = day1 + random.randint(0, 7)
+
+    postdate = generate_random_postdate(month, day1)
+    effectivedate = generate_random_effectivedate(month, day2)
+    
+    return postdate, effectivedate
+
+# Example usage
+shortname = "ExampleShortNameThatIsTooLong"
+processed_shortname = process_shortname(shortname)
+print(f"Processed Shortname: {processed_shortname}")
+
+postdate, effectivedate = generate_random_legit_datechecker()
+print(f"Post Date: {postdate}, Effective Date: {effectivedate}")
+
