@@ -458,3 +458,39 @@ for i, date_diff in enumerate(date_diff_list, 1):
 
 
 
+
+
+from datetime import datetime
+
+def parse_dates_from_lines(lines):
+    post_dates = []
+    effective_dates = []
+    for line in lines:
+        postdate = line[40:47]  # Assuming post date starts at index 40 and has a length of 7
+        effectivedate = line[47:54]  # Assuming effective date starts at index 47 and has a length of 7
+        post_dates.append(postdate)
+        effective_dates.append(effectivedate)
+    return post_dates, effective_dates
+
+def calculate_date_difference(post_dates, effective_dates):
+    date_diffs = []
+    for postdate, effectivedate in zip(post_dates, effective_dates):
+        postdate_obj = datetime.strptime(postdate, "%m%d%y")  # Updated format string
+        effectivedate_obj = datetime.strptime(effectivedate, "%m%d%y")  # Updated format string
+        diff = effectivedate_obj - postdate_obj
+        date_diffs.append(diff.days)
+    return date_diffs
+
+def date_difference_checker(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+    post_dates, effective_dates = parse_dates_from_lines(lines)
+    date_diffs = calculate_date_difference(post_dates, effective_dates)
+    return date_diffs
+
+# Example usage
+file_path = "sample_data.txt"
+differences = date_difference_checker(file_path)
+print("Date Differences:", differences)
+
+
