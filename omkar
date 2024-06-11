@@ -494,3 +494,25 @@ differences = date_difference_checker(file_path)
 print("Date Differences:", differences)
 
 
+
+77777
+
+def generate_effectivedate(postdate):
+    # Convert the postdate string to a datetime object
+    postdate_obj = datetime.strptime(postdate, "%m%d%y")
+
+    # Calculate the effective date by adding 7 days to the postdate
+    effective_date_obj = postdate_obj + timedelta(days=7)
+
+    # Format the postdate and effective date strings
+    postdate_str = postdate_obj.strftime("%m%d24%02")
+    effective_date_str = effective_date_obj.strftime("%m%d24%02")
+
+    return postdate_str, effective_date_str
+
+# Example usage
+postdate = input("Enter the postdate (in the format MMDDYY): ")
+postdate, effective_date = generate_effectivedate(postdate)
+print("Post Date:", postdate)
+print("Effective Date:", effective_date)
+
