@@ -417,3 +417,44 @@ def generate_random_legit_datechecker():
 # Example usage
 postdate, effectivedate = generate_random_legit_datechecker()
 print(f"Post Date: {postdate}, Effective Date: {effectivedate}")
+
+
+
+
+date checker
+from datetime import datetime
+
+def calculate_date_difference(post_date_str, effective_date_str):
+    # Convert date strings to datetime objects
+    post_date = datetime.strptime(post_date_str, '%m%d%Y')
+    effective_date = datetime.strptime(effective_date_str, '%m%d%Y')
+
+    # Calculate the date difference
+    date_diff = effective_date - post_date
+
+    # Return the date difference in days
+    return date_diff.days
+
+def date_difference_checker(lines):
+    date_diff_list = []
+
+    for line in lines:
+        post_date_str = line[40:47]
+        effective_date_str = line[47:54]
+
+        date_diff = calculate_date_difference(post_date_str, effective_date_str)
+        date_diff_list.append(date_diff)
+
+    return date_diff_list
+
+# Example usage
+file_path = "Sample_data.txt"
+lines = read_file(file_path)
+date_diff_list = date_difference_checker(lines)
+
+# Print the date differences
+for i, date_diff in enumerate(date_diff_list, 1):
+    print(f"Line {i}: Date Difference: {date_diff} days")
+
+
+
