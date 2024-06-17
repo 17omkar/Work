@@ -1,1 +1,100 @@
 
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.metrics import accuracy_score, classification_report
+from xgboost import XGBClassifier
+import joblib
+
+# Function to read data from a file
+def read_file(file_path):
+    with open(file_path) as file:
+        lines = file.read().splitlines()
+    return lines
+
+# Function to convert lines to a pandas DataFrame for non-monetary transactions
+def lines_to_dataframe_non_monetary(lines):
+    data = []
+    for line in lines:
+        try:
+            op_id = line[91:99].strip()  # Extract OpID field
+            if op_id and op_id[0].isalpha() and op_id[1:].isalnum() and len(op_id) == 8:  # Validate OpID format
+                data.append([
+                    int(line[1:4]),    # Bank
+                    int(line[4:7]),    # Branch
+                    int(line[7:14]),   # AccountNumber
+                    int(line[14:18]),  # LoanAccountType
+                    int(line[40:47]),  # PostDate
+                    int(line[47:54]),  # EffectiveDate
+                    int(line[54:56]),  # TranCode
+                    int(line[56:59]),  # FieldNumber
+                    op_id,             # OpID
+                    line[99:102].strip(), # OpName
+                    int(line[102:105]) # BatchNumber
+                ])
+            else:
+                print(f"Ignoring line due to invalid OpID format: {line}")
+        except ValueError as e:
+            print(f"Error processing line: {line}. Error: {e}")
+            continue
+
+    columns = [
+        "Bank", "Branch", "AccountNumber", "LoanAccountType", "PostDate", "EffectiveDate", 
+        "TranCode", "FieldNumber", "OpID", "OpName", "BatchNumber"
+    ]
+    return pd.DataFrame(data, columns=columns)
+
+# Main function to run the code
+if __name__ == "__main__":
+    # Read fraud data file
+    fraud_file_path = "fraud_data.txt"
+    fraud_lines = read_file(fraud_file_path)
+    df_fraud = lines_to_dataframe_non_monetary(fraud_lines)
+    df_fraud['Fraud'] = 1  # Label fraud data with 1
+
+    # Read non-fraud data file
+    non_fraud_file_path = "non_fraud_data.txt"
+    non_fraud_lines = read_file(non_fraud_file_path)
+    df_non_fraud = lines_to_dataframe_non_monetary(non_fraud_lines)
+    df_non_fraud['Fraud'] = 0  # Label non-fraud data with 0
+
+    # Combine fraud and non-fraud data
+    df_combined = pd.concat([df_fraud, df_non_fraud], ignore_index=True)
+
+    # Shuffle the combined DataFrame
+    df_combined = df_combined.sample(frac=1, random_state=42).reset_index(drop=True)
+
+    # Encode categorical variables
+    label_encoder = LabelEncoder()
+    df_combined['OpName'] = label_encoder.fit_transform(df_combined['OpName'])
+
+    # If OpID needs encoding, use OneHotEncoder or other encoding strategies
+
+    # Split data into features and labels
+    X = df_combined.drop(columns=['Fraud'])
+    y = df_combined['Fraud']
+
+    # Normalize the data
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+
+    # Split into training and testing data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Build the model
+    model = XGBClassifier(use_label_encoder=False, eval_metric='logloss')
+
+    # Train the model
+    model.fit(X_train, y_train)
+
+    # Make predictions
+    y_pred = model.predict(X_test)
+
+    # Evaluate the model
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f'Test accuracy: {accuracy:.4f}')
+    print(classification_report(y_test, y_pred))
+
+    # Save the model
+    joblib.dump(model, 'fraud_detection_model.pkl')
