@@ -74,3 +74,99 @@ if __name__ == "__main__":
     # Optionally save the DataFrame to a CSV file
     rec_data_ml.data.to_csv("combined_data.csv", index=False)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+import pandas as pd
+import datetime
+
+class RecData2MLData:
+
+    def __init__(self):
+        self.data = pd.DataFrame()
+
+    def filehandle(self, st1, st2):
+        # Open the non-fraudulent and fraudulent data files
+        with open(st1, "r") as file1, open(st2, "r") as file2:
+            lines1 = file1.readlines()[:120000]  # Read first 120000 lines from non-fraudulent file
+            lines2 = file2.readlines()  # Read all lines from fraudulent file
+
+            # Process non-fraudulent lines
+            non_fraud_data = [self.process_line(line, target=0) for line in lines1]
+
+            # Process fraudulent lines
+            fraud_data = [self.process_line(line, target=1) for line in lines2]
+
+        # Concatenate the data into a single DataFrame
+        self.data = pd.concat([non_fraud_data, fraud_data], ignore_index=True)
+
+        # Shuffle the DataFrame
+        self.data = self.data.sample(frac=1).reset_index(drop=True)
+
+    def process_line(self, string, target):
+        str_len = len(string)
+
+        # Extract relevant fields from the string
+        rec_type = int(string[0:1]) # Record Type
+        bank_code = int(string[1:4]) # Bank Code
+        branch_code = int(string[4:7]) # Branch Code
+        acct_code = int(string[14:18]) # Account Code
+        acct_type = int(string[18:19]) # Account Type
+        class_code = int(string[19:21]) # Class Code
+        collateral_code = int(string[21:25]) # Collateral Code
+
+        # Calculate date difference
+        post_date = datetime.date(2024, int(string[47:49]), int(string[49:51]))
+        effective_date = datetime.date(2024, int(string[40:42]), int(string[42:44]))
+        diff_date = (post_date - effective_date).days
+
+        tran_code = int(string[54:56]) # Transaction Code
+        field_number = int(string[56:59].strip()) if string[56:59].strip() else None
+
+        # Validate and extract operator ID
+        opid = string[97:105].strip()
+        if len(opid) != 8 or not opid[0].isalpha() or not opid[1:].isalnum():
+            opid = None
+
+        # Extract operator name
+        opname = string[105:121].strip() if string[105:121].strip() else None
+
+        # Extract batch number
+        batch_num = int(string[121:124])
+
+        # Return a dictionary with the extracted data and target label
+        return {
+            "batch number": batch_num,
+            "branch code": branch_code,
+            "account code": acct_code,
+            "date difference": diff_date,
+            "tran code": tran_code,
+            "field number": field_number,
+            "operator id": opid,
+            "operator name": opname,
+            "target": target
+        }
+
+if __name__ == "__main__":
+    # Paths to the files containing non-fraudulent and fraudulent data
+    non_fraudulent_file_path = "non_fraud_data.txt"
+    fraudulent_file_path = "fraud_data.txt"
+
+    # Create an instance of the class and process the files
+    rec_data_ml = RecData2MLData()
+    rec_data_ml.filehandle(non_fraudulent_file_path, fraudulent_file_path)
+
+    # The resulting DataFrame with combined and shuffled data
+    print(rec_data_ml.data)
+    # Optionally save the DataFrame to a CSV file
+    rec_data_ml.data.to_csv("combined_data.csv", index=False)
