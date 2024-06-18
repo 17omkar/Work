@@ -1,4 +1,4 @@
-9import pandas as pd
+99import pandas as pd
 import datetime
 import random
 
@@ -271,3 +271,167 @@ if __name__ == "__main__":
     print(predictions_df.head())
     # Optionally save the predictions to a CSV file
     predictions_df.to_csv("predictions.csv", index=False)
+
+
+
+
+
+
+
+
+
+
+
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+import joblib
+import datetime
+
+class RecData2MLData:
+
+    def __init__(self):
+        self.data = pd.DataFrame()
+
+    def filehandle(self, st1, st2):
+        # Open the non-fraudulent and fraudulent data files
+        with open(st1, "r") as file1, open(st2, "r") as file2:
+            lines1 = file1.readlines()[:120000]  # Read first 120000 lines from non-fraudulent file
+            lines2 = file2.readlines()  # Read all lines from fraudulent file
+
+            # Process non-fraudulent lines
+            non_fraud_data = [self.process_line(line, target=0) for line in lines1]
+
+            # Process fraudulent lines
+            fraud_data = [self.process_line(line, target=1) for line in lines2]
+
+        # Convert lists of dictionaries into DataFrames
+        non_fraud_df = pd.DataFrame(non_fraud_data)
+        fraud_df = pd.DataFrame(fraud_data)
+
+        # Concatenate the DataFrames
+        self.data = pd.concat([non_fraud_df, fraud_df], ignore_index=True)
+
+    def process_line(self, string, target):
+        str_len = len(string)
+
+        # Extract relevant fields from the string
+        rec_type = int(string[0:1])  # Record Type
+        bank_code = int(string[1:4])  # Bank Code
+        branch_code = int(string[4:7])  # Branch Code
+        acct_code = int(string[14:18])  # Account Code
+        acct_type = int(string[18:19])  # Account Type
+        class_code = int(string[19:21])  # Class Code
+        collateral_code = int(string[21:25])  # Collateral Code
+
+        # Calculate date difference
+        post_date = datetime.date(2024, int(string[47:49]), int(string[49:51]))
+        effective_date = datetime.date(2024, int(string[40:42]), int(string[42:44]))
+        diff_date = (post_date - effective_date).days
+
+        tran_code = int(string[54:56])  # Transaction Code
+        field_number = int(string[56:59].strip()) if string[56:59].strip() else None
+
+        # Validate and extract operator ID
+        opid = string[97:105].strip()
+        opid_present = 1 if opid else 0
+
+        # Extract operator name
+        opname = string[105:121].strip()
+        opname_present = 1 if opname else 0
+
+        # Extract batch number
+        batch_num = int(string[121:124])
+
+        # Return a dictionary with the extracted data and target label
+        return {
+            "batch number": batch_num,
+            "branch code": branch_code,
+            "account code": acct_code,
+            "date difference": diff_date,
+            "tran code": tran_code,
+            "field number": field_number,
+            "operator id": opid_present,
+            "operator name": opname_present,
+            "target": target
+        }
+
+def load_model_and_scaler(model_file, scaler_file):
+    # Load the model and scaler
+    model = joblib.load(model_file)
+    scaler = joblib.load(scaler_file)
+    return model, scaler
+
+def preprocess_input(input_data, scaler):
+    # Normalize the data (assuming input_data is already in the correct format)
+    input_data = scaler.transform(input_data)
+
+    return input_data
+
+def predict_fraud(model, input_data):
+    # Make predictions
+    predictions = model.predict(input_data)
+    return predictions
+
+if __name__ == "__main__":
+    # Paths to the files containing non-fraudulent and fraudulent data
+    non_fraudulent_file_path = "non_fraud_data.txt"
+    fraudulent_file_path = "fraud_data.txt"
+
+    # Create an instance of the class and process the files
+    rec_data_ml = RecData2MLData()
+    rec_data_ml.filehandle(non_fraudulent_file_path, fraudulent_file_path)
+
+    # The resulting DataFrame with combined data
+    combined_data = rec_data_ml.data
+
+    # Path to the CSV file containing the data
+    csv_file_path = "combined_data.csv"
+
+    # Train and save the model and scaler
+    X, y = combined_data.drop(columns=['target']), combined_data['target']
+
+    # Normalize the data
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+
+    # Build the Random Forest model
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+    # Train the model
+    model.fit(X, y)
+
+    # Save the model and scaler
+    joblib.dump(model, 'fraud_detection_rf_model.pkl')
+    joblib.dump(scaler, 'scaler.pkl')
+
+    # Load the model and scaler for prediction
+    model, scaler = load_model_and_scaler('fraud_detection_rf_model.pkl', 'scaler.pkl')
+
+    # Example input for prediction (replace with user input)
+    input_data = pd.DataFrame({
+        "batch number": [123],
+        "branch code": [456],
+        "account code": [789],
+        "date difference": [30],  # Example date difference in days
+        "tran code": [101],
+        "field number": [3],
+        "operator id": [1],  # Example operator ID presence (1 if present, 0 if absent)
+        "operator name": [1],  # Example operator name presence (1 if present, 0 if absent)
+    })
+
+    # Preprocess input data
+    input_data_processed = preprocess_input(input_data, scaler)
+
+    # Make predictions
+    predictions = predict_fraud(model, input_data_processed)
+
+    # Print predictions (1 for fraud, 0 for non-fraud)
+    print(f'Prediction: {predictions[0]}')
+
+    # Optionally, print specific fields if fraud is predicted
+    if predictions[0] == 1:
+        print(f'Batch Number: {input_data["batch number"].values[0]}')
+        print(f'Branch Code: {input_data["branch code"].values[0]}')
+        print(f'Account Code: {input_data["account code"].values[0]}')
+        # Add more fields as needed
