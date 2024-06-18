@@ -435,3 +435,141 @@ if __name__ == "__main__":
         print(f'Branch Code: {input_data["branch code"].values[0]}')
         print(f'Account Code: {input_data["account code"].values[0]}')
         # Add more fields as needed
+
+
+
+
+
+
+
+
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+import joblib
+
+# Function to load and preprocess data from CSV
+def load_and_preprocess_data(csv_file):
+    # Load data from CSV file
+    df = pd.read_csv(csv_file)
+
+    # Convert opid and opname to 1 if present and 0 if not
+    df['operator id'] = df['operator id'].apply(lambda x: 1 if pd.notna(x) else 0)
+    df['operator name'] = df['operator name'].apply(lambda x: 1 if pd.notna(x) else 0)
+
+    # Split data into features and target
+    X = df.drop(columns=['target'])
+    y = df['target']
+
+    # Normalize the data
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+    
+    return X, y, scaler
+
+# Main function to train and evaluate the model
+def train_and_evaluate_model(csv_file):
+    # Load and preprocess data
+    X, y, scaler = load_and_preprocess_data(csv_file)
+
+    # Split into training and testing data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Build the Random Forest model
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+    # Train the model
+    model.fit(X_train, y_train)
+
+    # Make predictions
+    y_pred = model.predict(X_test)
+
+    # Evaluate the model
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f'Test accuracy: {accuracy:.4f}')
+    print(classification_report(y_test, y_pred))
+
+    # Save the model and scaler
+    joblib.dump(model, 'fraud_detection_rf_model.pkl')
+    joblib.dump(scaler, 'scaler.pkl')
+
+    return model, scaler
+
+# Function to make predictions on a DataFrame using the trained model
+def make_predictions(csv_file, model_file, scaler_file):
+    # Load the model and scaler
+    model = joblib.load(model_file)
+    scaler = joblib.load(scaler_file)
+
+    # Load and preprocess data
+    df = pd.read_csv(csv_file)
+    X = df.drop(columns=['target'])
+
+    # Convert opid and opname to 1 if present and 0 if not
+    X['operator id'] = X['operator id'].apply(lambda x: 1 if pd.notna(x) else 0)
+    X['operator name'] = X['operator name'].apply(lambda x: 1 if pd.notna(x) else 0)
+
+    # Normalize the data
+    X = scaler.transform(X)
+
+    # Make predictions
+    predictions = model.predict(X)
+
+    # Add predictions to DataFrame
+    df['predictions'] = predictions
+
+    return df
+
+# Function to make predictions on a single input DataFrame
+def predict_single_input(input_df, model_file, scaler_file):
+    # Load the model and scaler
+    model = joblib.load(model_file)
+    scaler = joblib.load(scaler_file)
+
+    # Convert opid and opname to 1 if present and 0 if not
+    input_df['operator id'] = input_df['operator id'].apply(lambda x: 1 if pd.notna(x) else 0)
+    input_df['operator name'] = input_df['operator name'].apply(lambda x: 1 if pd.notna(x) else 0)
+
+    # Normalize the input data
+    input_df = scaler.transform(input_df)
+
+    # Make prediction
+    prediction = model.predict(input_df)
+
+    return prediction[0]
+
+if __name__ == "__main__":
+    # Path to the CSV file containing the data
+    csv_file_path = "combined_data.csv"
+
+    # Train and evaluate the model
+    train_and_evaluate_model(csv_file_path)
+
+    # Make predictions on the same data
+    predictions_df = make_predictions(csv_file_path, 'fraud_detection_rf_model.pkl', 'scaler.pkl')
+
+    # Print the predictions
+    print(predictions_df.head())
+    # Optionally save the predictions to a CSV file
+    predictions_df.to_csv("predictions.csv", index=False)
+
+    # Example of predicting single input (you can replace this with your specific input DataFrame)
+    example_input_df = pd.DataFrame({
+        'batch number': [123],
+        'branch code': [456],
+        'account code': [789],
+        'date difference': [30],
+        'tran code': [101],
+        'field number': [12345],
+        'operator id': ['OP123456'],  # Example input for operator id
+        'operator name': ['Operator ABC'],  # Example input for operator name
+    })
+
+    # Predict single input
+    single_prediction = predict_single_input(example_input_df, 'fraud_detection_rf_model.pkl', 'scaler.pkl')
+
+    # Print single input prediction
+    print(f'Single input prediction: {"Fraud" if single_prediction == 1 else "Not Fraud"}')
